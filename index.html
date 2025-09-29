@@ -7,68 +7,120 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-primary: #0f172a; /* slate-900 */
+            --bg-secondary: #1e293b; /* slate-800 */
+            --bg-tertiary: #334155; /* slate-700 */
+            --border-primary: #334155; /* slate-700 */
+            --text-primary: #e2e8f0; /* slate-200 */
+            --text-secondary: #94a3b8; /* slate-400 */
+            --text-accent: #60a5fa; /* blue-400 */
+            --text-accent-teal: #2dd4bf; /* teal-400 */
+            --feedback-correct: #4ade80;
+            --feedback-incorrect: #f87171;
+            --feedback-neutral: #facc15;
+            --btn-hover-shadow: rgba(0, 0, 0, 0.4);
+        }
+
+        html.light {
+            --bg-primary: #f1f5f9; /* slate-100 */
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9; /* slate-100 */
+            --border-primary: #e2e8f0; /* slate-200 */
+            --text-primary: #1e293b; /* slate-800 */
+            --text-secondary: #64748b; /* slate-500 */
+            --text-accent: #2563eb; /* blue-600 */
+            --text-accent-teal: #0d9488; /* teal-600 */
+            --feedback-correct: #16a34a; /* green-600 */
+            --feedback-incorrect: #dc2626; /* red-600 */
+            --feedback-neutral: #d97706; /* amber-600 */
+            --btn-hover-shadow: rgba(0, 0, 0, 0.15);
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #111827;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
         }
         .card {
-            background-color: #1f2937;
-            border: 1px solid #4b5563;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            transition: background-color 0.3s, border-color 0.3s;
         }
-        .feedback-correct { color: #4ade80; }
-        .feedback-incorrect { color: #f87171; }
-        .feedback-neutral { color: #facc15; }
+        .text-accent { color: var(--text-accent); }
+        .text-accent-teal { color: var(--text-accent-teal); }
+        .feedback-correct { color: var(--feedback-correct); }
+        .feedback-incorrect { color: var(--feedback-incorrect); }
+        .feedback-neutral { color: var(--feedback-neutral); }
+        
         #answer-input {
-            background-color: #374151;
-            border-color: #6b7280;
+            background-color: var(--bg-tertiary);
+            border-color: var(--border-primary);
+            color: var(--text-primary);
         }
-        #answer-input:focus { --tw-ring-color: #2563eb; }
+        #answer-input:focus { --tw-ring-color: #3b82f6; }
+        
         .btn {
             transition: all 0.2s ease-in-out;
         }
         .btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 4px 12px var(--btn-hover-shadow);
         }
+
         .mc-option {
-            background-color: #374151;
-            border: 1px solid #6b7280;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
         }
         .mc-option.selected {
             background-color: #2563eb;
             border-color: #3b82f6;
             color: white;
         }
-        .mc-option:hover:not(.selected) {
-            background-color: #4b5563;
-        }
+        html.light .mc-option:hover:not(.selected) { background-color: #e2e8f0; }
+        html:not(.light) .mc-option:hover:not(.selected) { background-color: #475569; }
+        
+        .modal-bg { background-color: var(--bg-secondary); border-color: var(--border-primary); }
+        .text-muted { color: var(--text-secondary); }
     </style>
 </head>
-<body class="text-gray-200 min-h-screen">
-    <div id="app" class="w-full max-w-4xl mx-auto py-8 px-4">
+<body class="min-h-screen">
+    <div id="app" class="w-full max-w-4xl mx-auto py-8 px-4 relative">
 
         <!-- Start Screen -->
         <div id="start-screen">
              <div class="text-center card p-10 rounded-xl shadow-2xl relative">
-                <button id="how-to-play-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white transition" aria-label="How to play">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.546-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </button>
-                <h1 class="text-4xl font-bold text-blue-400">Pathogen Pairs</h1>
-                <p class="text-gray-400 mt-2 text-sm">created by Josef Iqbal</p>
-                <p class="text-gray-300 mt-4 max-w-lg mx-auto">Two modes to test your microbiology knowledge. Choose your challenge!</p>
+                <div class="absolute top-4 right-4 flex items-center gap-2">
+                    <button id="theme-toggle-btn" class="p-2 rounded-full text-muted hover:text-primary hover:bg-tertiary" aria-label="Toggle theme">
+                        <svg id="theme-toggle-sun" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <svg id="theme-toggle-moon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
+                    <button id="how-to-play-btn" class="p-2 rounded-full text-muted hover:text-primary hover:bg-tertiary transition" aria-label="How to play">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.546-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </button>
+                </div>
+                <h1 class="text-4xl font-bold text-accent">Pathogen Pairs</h1>
+                <p class="text-muted mt-2 text-sm">created by Josef Iqbal</p>
+                <p class="text-primary mt-4 max-w-lg mx-auto">Two modes to test your microbiology knowledge. Choose your challenge!</p>
                 <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
                     <div class="card p-6 rounded-lg text-left flex flex-col">
-                        <h2 class="text-2xl font-bold text-blue-400">Classic Mode</h2>
-                        <p class="text-gray-400 mt-2 flex-grow">Given two pathogens, guess the property they share.</p>
-                        <p class="text-xs text-gray-500 mt-1">10 Pathogen Pairs, 1 Bonus Buzzword</p>
+                        <h2 class="text-2xl font-bold text-accent">Classic Mode</h2>
+                        <p class="text-muted mt-2 flex-grow">Given two pathogens, guess the property they share.</p>
+                        <p class="text-xs text-muted mt-1">10 Pathogen Pairs, 1 Bonus Buzzword</p>
                         <button id="start-classic-btn" class="btn mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg w-full">Play Classic</button>
                     </div>
                     <div class="card p-6 rounded-lg text-left flex flex-col">
-                        <h2 class="text-2xl font-bold text-teal-400">Buzzword Blitz</h2>
-                        <p class="text-gray-400 mt-2 flex-grow">Given a buzzword, name the associated pathogen.</p>
-                        <p class="text-xs text-gray-500 mt-1">10 Buzzwords, 1 Bonus Pathogen Pair</p>
+                        <h2 class="text-2xl font-bold text-accent-teal">Buzzword Blitz</h2>
+                        <p class="text-muted mt-2 flex-grow">Given a buzzword, name the associated pathogen.</p>
+                        <p class="text-xs text-muted mt-1">10 Buzzwords, 1 Bonus Pathogen Pair</p>
                         <button id="start-buzzword-btn" class="btn mt-4 bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-8 rounded-lg text-lg w-full">Play Blitz</button>
                     </div>
                 </div>
@@ -80,10 +132,17 @@
             <div class="flex-shrink-0">
                 <div class="flex justify-between items-center mb-6">
                     <div>
-                        <h2 id="question-title" class="text-2xl font-bold text-blue-400">Find the Common Property</h2>
-                        <p id="question-counter" class="text-gray-400">Question 1 of 10</p>
+                        <h2 id="question-title" class="text-2xl font-bold text-accent">Find the Common Property</h2>
+                        <p id="question-counter" class="text-muted">Question 1 of 10</p>
                     </div>
-                    <div class="text-lg font-semibold">Score: <span id="score">0</span></div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-lg font-semibold">Score: <span id="score">0</span></div>
+                        <button id="exit-game-btn" class="text-muted hover:text-primary transition" aria-label="Exit game">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div id="pathogen-display-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -92,10 +151,10 @@
                 </div>
 
                 <div id="answer-container" class="space-y-2">
-                    <p id="attempt-status" class="text-center text-gray-400 h-6"></p>
+                    <p id="attempt-status" class="text-center text-muted h-6"></p>
                     
                     <div id="free-response-container">
-                        <input type="text" id="answer-input" class="w-full p-3 text-center border rounded-lg text-lg text-gray-200 focus:ring-2 focus:border-blue-500" placeholder="Type your answer here...">
+                        <input type="text" id="answer-input" class="w-full p-3 text-center border rounded-lg text-lg focus:ring-2 focus:border-blue-500" placeholder="Type your answer here...">
                     </div>
 
                     <div id="mc-container" class="hidden grid grid-cols-1 gap-3">
@@ -111,7 +170,7 @@
             
              <div id="feedback-container" class="mt-4 text-center">
                 <p id="feedback-text" class="text-lg font-semibold"></p>
-                <div id="all-answers-container" class="mt-2 text-sm text-gray-400"></div>
+                <div id="all-answers-container" class="mt-2 text-sm text-muted"></div>
                 <div class="mt-2">
                      <button id="proceed-to-mc-btn" class="btn hidden mt-2 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded-lg">Try Attempt 2 (+50)</button>
                      <button id="next-question-btn" class="btn hidden mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">Next</button>
@@ -128,10 +187,10 @@
         <!-- End Screen -->
         <div id="end-screen" class="hidden text-center space-y-6">
             <div class="card p-10 rounded-xl shadow-2xl">
-                <h1 class="text-4xl font-bold text-blue-400">Game Over!</h1>
-                <p class="text-xl text-gray-300 mt-4">Your final score is:</p>
+                <h1 class="text-4xl font-bold text-accent">Game Over!</h1>
+                <p class="text-xl text-primary mt-4">Your final score is:</p>
                 <p id="final-score" class="text-6xl font-bold my-2">0</p>
-                <p class="text-lg text-gray-400">High Score: <span id="high-score">0</span></p>
+                <p class="text-lg text-muted">High Score: <span id="high-score">0</span></p>
                 <div class="flex justify-center gap-4 mt-6">
                     <button id="review-btn" class="btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg">Review Answers</button>
                     <button id="play-again-btn" class="btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg">Play Again</button>
@@ -141,7 +200,7 @@
 
         <!-- Review Screen -->
         <div id="review-screen" class="hidden space-y-6">
-            <h1 class="text-3xl font-bold text-center text-blue-400">Review Questions</h1>
+            <h1 class="text-3xl font-bold text-center text-accent">Review Questions</h1>
             <div id="review-content" class="space-y-4 max-h-[70vh] overflow-y-auto p-2"></div>
             <div class="text-center">
                 <button id="play-again-review-btn" class="btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg">Play Again</button>
@@ -151,24 +210,24 @@
     
     <!-- How to Play Modal -->
     <div id="how-to-play-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-        <div class="bg-gray-800 p-8 rounded-xl max-w-lg w-full relative border border-gray-600 shadow-xl">
-            <button id="close-how-to-play-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white transition" aria-label="Close">
+        <div class="modal-bg p-8 rounded-xl max-w-lg w-full relative border shadow-xl">
+            <button id="close-how-to-play-btn" class="absolute top-4 right-4 text-muted hover:text-primary transition" aria-label="Close">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
-            <h2 class="text-2xl font-bold text-blue-400 mb-4">How to Play</h2>
-            <div class="space-y-3 text-gray-300">
+            <h2 class="text-2xl font-bold text-accent mb-4">How to Play</h2>
+            <div class="space-y-3 text-primary">
                 <p>Your goal is to guess the correct answer for each question. I'm usually thinking of a very specific answer!</p>
                 
-                <p class="font-semibold text-blue-300">Classic Mode (Guess the Property):</p>
+                <p class="font-semibold text-accent">Classic Mode (Guess the Property):</p>
                 <ul class="list-disc list-inside space-y-2 pl-4">
                     <li>Guess the property I'm thinking of on your <strong>first try</strong> for <strong>100 points</strong> (75 with a hint).</li>
                     <li>Guessing another valid shared property grants a <strong>free redo</strong> on your first attempt.</li>
                     <li>A wrong first guess leads to a multiple-choice <strong>second try</strong> for <strong>50 points</strong>.</li>
                 </ul>
 
-                <p class="font-semibold text-teal-300 mt-4">Buzzword Blitz (Guess the Pathogen):</p>
+                <p class="font-semibold text-accent-teal mt-4">Buzzword Blitz (Guess the Pathogen):</p>
                 <ul class="list-disc list-inside space-y-2 pl-4">
                     <li>Guess the correct pathogen on your <strong>first try</strong> for <strong>100 points</strong>.</li>
                     <li>A wrong first guess leads to a multiple-choice <strong>second try</strong> for <strong>50 points</strong>.</li>
@@ -178,6 +237,19 @@
             </div>
         </div>
     </div>
+
+    <!-- Exit Confirmation Modal -->
+    <div id="exit-confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div class="modal-bg p-8 rounded-xl max-w-sm w-full relative border shadow-xl text-center">
+            <h2 class="text-2xl font-bold text-yellow-400 mb-4">Are you sure?</h2>
+            <p class="text-primary mb-6">Your progress for this round will be lost.</p>
+            <div class="flex justify-center gap-4">
+                <button id="cancel-exit-btn" class="btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg">Cancel</button>
+                <button id="confirm-exit-btn" class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg">Exit Game</button>
+            </div>
+        </div>
+    </div>
+
 
     <script>
         // --- EMBEDDED PATHOGEN DATA ---
@@ -209,7 +281,7 @@ Spore former,Property,Bacillus cereus,Bacillus anthracis,Clostridium tetani,Clos
 Lactose Fermenter,Property Classification,Escherichia Coli,Klebsiella,Enterobacter,Citrobacter,Serratia
 Oxidase Positive,Property Classification,Campylobacter,Helicobacter,Vibrio,Aeromonas,Pseudomonas
 Intracellular,Replication Location,Listeria monocytogenes,Shigella spp.,Brucella spp.,Chlamydia trachomatis,Histoplasma capsulatum
-Obligate intracellular,Replication Location,Rickettsia rickettsii (RMSF),Rickettsia prowazekii (Epidemic Typhus),Coxiella burnetii (Q Fever),Legionella pneumophila,Chlamydia trachomatis
+Obligate intracellular,Replication Location,Rickettsia rickettsii (RMSF),Rickettsia prowazekii (Epidemic Typhus),Coxiella burnetii (Q Fever),Chlamydia trachomatis
 Meningitis,Symptom,Streptococcus pneumoniae,Neisseria meningitidis,Haemophilus influenzae,Cryptococcus neoformans,Mumps
 Picornaviridae/Picornavirus,Viral Family,Picornavirus,Rhinovirus,Polio (Poliovirus),Coxsackie A,Coxsackie B
 Live-Attenuated vaccine,Vaccine Type,Rubella Virus,Measles (Rubeola),Mumps,Varicella-Zoster Virus (VZV),Yellow fever
@@ -329,17 +401,26 @@ Hepatosplenomegaly and portal hypertension,Schistosoma spp.
 `;
 
         // DOM Elements
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+        const sunIcon = document.getElementById('theme-toggle-sun');
+        const moonIcon = document.getElementById('theme-toggle-moon');
+
         const startScreen = document.getElementById('start-screen');
         const gameScreen = document.getElementById('game-screen');
         const endScreen = document.getElementById('end-screen');
         const reviewScreen = document.getElementById('review-screen');
         const reviewContent = document.getElementById('review-content');
         const howToPlayModal = document.getElementById('how-to-play-modal');
+        const exitConfirmModal = document.getElementById('exit-confirm-modal');
 
         const startClassicBtn = document.getElementById('start-classic-btn');
         const startBuzzwordBtn = document.getElementById('start-buzzword-btn');
         const howToPlayBtn = document.getElementById('how-to-play-btn');
         const closeHowToPlayBtn = document.getElementById('close-how-to-play-btn');
+        const exitGameBtn = document.getElementById('exit-game-btn');
+        const confirmExitBtn = document.getElementById('confirm-exit-btn');
+        const cancelExitBtn = document.getElementById('cancel-exit-btn');
+        
         const questionTitle = document.getElementById('question-title');
         const questionCounter = document.getElementById('question-counter');
         const pathogenDisplayGrid = document.getElementById('pathogen-display-grid');
@@ -387,10 +468,31 @@ Hepatosplenomegaly and portal hypertension,Schistosoma spp.
         const SIMILARITY_THRESHOLD = 0.85; 
         const MAX_ANSWER_REPEATS = 1;
         const forbiddenAnswers = new Set([
+            'Bacteria', 'Virus', 'Fungi', 'Parasite', // Pathogen Types
             'Gram (+)', 'Gram (-)', 'Enveloped', 'Non-enveloped/naked',
-            'Bacillus', 'Cocci', 'Coccobacillus', 'Diplococci', 'Helminth', 'Rod',
+            'Bacillus', 'Cocci', 'Coccobacillus', 'Diplococci', 'Helminth', 'Rod', 'Rod/Bacillus',
             'Rod (comma-shaped/curved)', 'Spirochete'
         ]);
+        
+        // --- THEME SWITCHER ---
+        function applyTheme(theme) {
+            if (theme === 'light') {
+                document.documentElement.classList.add('light');
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            } else {
+                document.documentElement.classList.remove('light');
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = localStorage.getItem('theme') || 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('theme', newTheme);
+            applyTheme(newTheme);
+        }
 
         // --- UTILITY FUNCTIONS ---
         function getSimilarity(s1, s2) {
@@ -504,10 +606,11 @@ Hepatosplenomegaly and portal hypertension,Schistosoma spp.
                 }
 
                 const allSharedProperties = mainPathogenProperties.filter(prop =>
-                    prop.classification !== 'Pathogen Type' &&
                     prop.pathogens.includes(pathogen1) &&
                     prop.pathogens.includes(pathogen2)
                 );
+                
+                if (allSharedProperties.length === 0) continue;
 
                 const validSharedProperties = allSharedProperties.filter(prop => !forbiddenAnswers.has(prop.property));
 
@@ -860,10 +963,10 @@ Hepatosplenomegaly and portal hypertension,Schistosoma spp.
                 const existingFeedback = feedbackText.innerHTML;
                 feedbackText.innerHTML = `${existingFeedback}<br>I was thinking of: <strong>${answerToShow}</strong>`;
 
-                let html = '<h4 class="font-semibold mt-3 text-gray-300">All Shared Properties:</h4><ul class="list-none text-center max-w-md mx-auto">';
+                let html = `<h4 class="font-semibold mt-3 text-primary">All Shared Properties:</h4><ul class="list-none text-center max-w-md mx-auto">`;
                 currentQuestion.allSharedProperties.forEach(prop => {
                     const isIntended = prop.property === answerToShow;
-                    html += `<li class="p-1 ${isIntended ? 'text-green-400 font-bold' : 'text-gray-400'}">${prop.property}</li>`;
+                    html += `<li class="p-1 ${isIntended ? 'feedback-correct font-bold' : 'text-muted'}">${prop.property}</li>`;
                 });
                 html += '</ul>';
                 allAnswersContainer.innerHTML = html;
@@ -901,13 +1004,17 @@ Hepatosplenomegaly and portal hypertension,Schistosoma spp.
                 card.className = 'card p-4 rounded-lg';
                 card.innerHTML = `
                     <p class="font-bold text-lg">${questionNumber}. ${title}</p>
-                    <p class="text-gray-300 mt-2">Correct Answer:</p>
-                    <ul class="list-disc list-inside text-green-400"><li><strong>${answer}</strong></li></ul>`;
+                    <p class="text-primary mt-2">Correct Answer:</p>
+                    <ul class="list-disc list-inside feedback-correct"><li><strong>${answer}</strong></li></ul>`;
                 reviewContent.appendChild(card);
             });
         }
         
         function initializeGame() {
+            // Theme setup
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            applyTheme(savedTheme);
+
             allPathogenNames = buildMasterPathogenList(mainCsvData, bonusCsvData);
             mainPathogenProperties = parseMainCSV(mainCsvData, allPathogenNames);
             buzzwordQuestions = parseBonusCSV(bonusCsvData);
@@ -962,6 +1069,8 @@ Hepatosplenomegaly and portal hypertension,Schistosoma spp.
 
         // --- EVENT LISTENERS ---
         window.addEventListener('load', initializeGame);
+        themeToggleBtn.addEventListener('click', toggleTheme);
+
         startClassicBtn.addEventListener('click', () => {
             gameMode = 'classic';
             startGame();
@@ -1003,16 +1112,31 @@ Hepatosplenomegaly and portal hypertension,Schistosoma spp.
         howToPlayBtn.addEventListener('click', () => {
             howToPlayModal.classList.remove('hidden');
         });
-
         closeHowToPlayBtn.addEventListener('click', () => {
             howToPlayModal.classList.add('hidden');
         });
-
         howToPlayModal.addEventListener('click', (e) => {
-            if (e.target === howToPlayModal) { // Click on the dark overlay
+            if (e.target === howToPlayModal) { 
                 howToPlayModal.classList.add('hidden');
             }
         });
+
+        exitGameBtn.addEventListener('click', () => {
+            exitConfirmModal.classList.remove('hidden');
+        });
+        cancelExitBtn.addEventListener('click', () => {
+            exitConfirmModal.classList.add('hidden');
+        });
+        confirmExitBtn.addEventListener('click', () => {
+            exitConfirmModal.classList.add('hidden');
+            resetToStartScreen();
+        });
+         exitConfirmModal.addEventListener('click', (e) => {
+            if (e.target === exitConfirmModal) { 
+                exitConfirmModal.classList.add('hidden');
+            }
+        });
+
 
         const handleScoreAdjustment = (newPoints) => {
             if (gameHistory.length === 0) return;
