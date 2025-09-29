@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pathogen Pairs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+        }
+        .card {
+            background-color: #1f2937;
+            border: 1px solid #4b5563;
+        }
+        .feedback-correct { color: #4ade80; }
+        .feedback-incorrect { color: #f87171; }
+        .feedback-neutral { color: #facc15; }
+        #answer-input {
+            background-color: #374151;
+            border-color: #6b7280;
+        }
+        #answer-input:focus { --tw-ring-color: #2563eb; }
+        .btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+        .mc-option {
+            background-color: #374151;
+            border: 1px solid #6b7280;
+        }
+        .mc-option.selected {
+            background-color: #2563eb;
+            border-color: #3b82f6;
+            color: white;
+        }
+        .mc-option:hover:not(.selected) {
+            background-color: #4b5563;
+        }
+    </style>
+</head>
+<body class="text-gray-200 min-h-screen">
+    <div id="app" class="w-full max-w-4xl mx-auto py-8 px-4">
+
+        <!-- Start Screen -->
+        <div id="start-screen">
+             <div class="text-center card p-10 rounded-xl shadow-2xl relative">
+                <button id="how-to-play-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white transition" aria-label="How to play">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.546-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </button>
+                <h1 class="text-4xl font-bold text-blue-400">Pathogen Pairs</h1>
+                <p class="text-gray-400 mt-2 text-sm">created by Josef Iqbal</p>
+                <p class="text-gray-300 mt-4 max-w-lg mx-auto">Two modes to test your microbiology knowledge. Choose your challenge!</p>
+                <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                    <div class="card p-6 rounded-lg text-left flex flex-col">
+                        <h2 class="text-2xl font-bold text-blue-400">Classic Mode</h2>
+                        <p class="text-gray-400 mt-2 flex-grow">Given two pathogens, guess the property they share.</p>
+                        <p class="text-xs text-gray-500 mt-1">10 Pathogen Pairs, 1 Bonus Buzzword</p>
+                        <button id="start-classic-btn" class="btn mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg w-full">Play Classic</button>
+                    </div>
+                    <div class="card p-6 rounded-lg text-left flex flex-col">
+                        <h2 class="text-2xl font-bold text-teal-400">Buzzword Blitz</h2>
+                        <p class="text-gray-400 mt-2 flex-grow">Given a buzzword, name the associated pathogen.</p>
+                        <p class="text-xs text-gray-500 mt-1">10 Buzzwords, 1 Bonus Pathogen Pair</p>
+                        <button id="start-buzzword-btn" class="btn mt-4 bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-8 rounded-lg text-lg w-full">Play Blitz</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="hidden flex flex-col">
+            <div class="flex-shrink-0">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 id="question-title" class="text-2xl font-bold text-blue-400">Find the Common Property</h2>
+                        <p id="question-counter" class="text-gray-400">Question 1 of 10</p>
+                    </div>
+                    <div class="text-lg font-semibold">Score: <span id="score">0</span></div>
+                </div>
+
+                <div id="pathogen-display-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div id="pathogen1-card" class="card p-4 rounded-xl text-center shadow-lg flex items-center justify-center"><h3 class="text-xl font-semibold">...</h3></div>
+                    <div id="pathogen2-card" class="card p-4 rounded-xl text-center shadow-lg flex items-center justify-center"><h3 class="text-xl font-semibold">...</h3></div>
+                </div>
+
+                <div id="answer-container" class="space-y-2">
+                    <p id="attempt-status" class="text-center text-gray-400 h-6"></p>
+                    
+                    <div id="free-response-container">
+                        <input type="text" id="answer-input" class="w-full p-3 text-center border rounded-lg text-lg text-gray-200 focus:ring-2 focus:border-blue-500" placeholder="Type your answer here...">
+                    </div>
+
+                    <div id="mc-container" class="hidden grid grid-cols-1 gap-3">
+                        <!-- MC options will be injected here -->
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button id="submit-answer-btn" class="btn w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg">Submit</button>
+                        <button id="hint-btn" class="btn w-1/3 bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-4 rounded-lg">Hint</button>
+                    </div>
+                </div>
+            </div>
+            
+             <div id="feedback-container" class="mt-4 text-center">
+                <p id="feedback-text" class="text-lg font-semibold"></p>
+                <div id="all-answers-container" class="mt-2 text-sm text-gray-400"></div>
+                <div class="mt-2">
+                     <button id="proceed-to-mc-btn" class="btn hidden mt-2 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded-lg">Try Attempt 2 (+50)</button>
+                     <button id="next-question-btn" class="btn hidden mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">Next</button>
+                     <button id="adjust-score-btn" class="btn hidden mt-2 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-1 px-3 text-sm">I should have gotten credit!</button>
+                     <div id="adjust-score-options" class="hidden mt-2 space-x-2">
+                        <button id="credit-attempt1-btn" class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Credit Attempt 1 (+100)</button>
+                        <button id="credit-attempt2-btn" class="btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Credit Attempt 2 (+50)</button>
+                        <button id="credit-back-btn" class="btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Back</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- End Screen -->
+        <div id="end-screen" class="hidden text-center space-y-6">
+            <div class="card p-10 rounded-xl shadow-2xl">
+                <h1 class="text-4xl font-bold text-blue-400">Game Over!</h1>
+                <p class="text-xl text-gray-300 mt-4">Your final score is:</p>
+                <p id="final-score" class="text-6xl font-bold my-2">0</p>
+                <p class="text-lg text-gray-400">High Score: <span id="high-score">0</span></p>
+                <div class="flex justify-center gap-4 mt-6">
+                    <button id="review-btn" class="btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg">Review Answers</button>
+                    <button id="play-again-btn" class="btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg">Play Again</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Review Screen -->
+        <div id="review-screen" class="hidden space-y-6">
+            <h1 class="text-3xl font-bold text-center text-blue-400">Review Questions</h1>
+            <div id="review-content" class="space-y-4 max-h-[70vh] overflow-y-auto p-2"></div>
+            <div class="text-center">
+                <button id="play-again-review-btn" class="btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg">Play Again</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- How to Play Modal -->
+    <div id="how-to-play-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div class="bg-gray-800 p-8 rounded-xl max-w-lg w-full relative border border-gray-600 shadow-xl">
+            <button id="close-how-to-play-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white transition" aria-label="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <h2 class="text-2xl font-bold text-blue-400 mb-4">How to Play</h2>
+            <div class="space-y-3 text-gray-300">
+                <p>Your goal is to guess the correct answer for each question. I'm usually thinking of a very specific answer!</p>
+                
+                <p class="font-semibold text-blue-300">Classic Mode (Guess the Property):</p>
+                <ul class="list-disc list-inside space-y-2 pl-4">
+                    <li>Guess the property I'm thinking of on your <strong>first try</strong> for <strong>100 points</strong> (75 with a hint).</li>
+                    <li>Guessing another valid shared property grants a <strong>free redo</strong> on your first attempt.</li>
+                    <li>A wrong first guess leads to a multiple-choice <strong>second try</strong> for <strong>50 points</strong>.</li>
+                </ul>
+
+                <p class="font-semibold text-teal-300 mt-4">Buzzword Blitz (Guess the Pathogen):</p>
+                <ul class="list-disc list-inside space-y-2 pl-4">
+                    <li>Guess the correct pathogen on your <strong>first try</strong> for <strong>100 points</strong>.</li>
+                    <li>A wrong first guess leads to a multiple-choice <strong>second try</strong> for <strong>50 points</strong>.</li>
+                </ul>
+
+                <p class="mt-4">After 10 questions, you'll get a special <strong>bonus question</strong> of the opposite type for up to 100 points!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- EMBEDDED PATHOGEN DATA ---
+        const mainCsvData = `Property,Property Classification,Pathogens
+Bacteria,Pathogen Type,Group A Streptococcus (S. pyogenes),Group B Streptococcus (S. agalactiae),Staphylococcus aureus,Staphylococcus epidermidis,Staphylococcus saprophyticus,Streptococcus pneumoniae,Corynebacterium diphtheriae,Bacillus anthracis,Bacillus cereus,Listeria monocytogenes,Clostridium tetani,Clostridium botulinum,Clostridium perfringens,Clostridioides difficile,Actinomyces israelii,Neisseria gonorrhoeae,Neisseria meningitidis,Moraxella catarrhalis,Pseudomonas aeruginosa,Haemophilus influenzae,Bordetella pertussis,Legionella pneumophila,Mycoplasma pneumoniae,Chlamydia trachomatis,Treponema pallidum subsp. pallidum,Borrelia burgdorferi,Campylobacter jejuni,Vibrio cholerae,Yersinia pestis,Yersinia enterocolitica,Escherichia coli (STEC/EHEC O157:H7),Escherichia coli (ETEC),Salmonella Typhi,Shigella spp.,Klebsiella spp.,Proteus spp.,Helicobacter pylori,Francisella tularensis,Brucella spp.,Bartonella henselae,Pasteurella multocida,Rickettsia rickettsii (RMSF),Rickettsia prowazekii (Epidemic Typhus),Coxiella burnetii (Q Fever),Streptococcus gallolyticus (bovis),Enterococcus faecalis,Enterococcus faecium,C. jeikeium
+Virus,Pathogen Type,Picornavirus,Rhinovirus,Polio (Poliovirus),Coxsackie A,Coxsackie B,Coronavirus,Adenovirus,Epstein-Barr Virus (EBV),Cytomegalovirus (CMV),Influenza A/B,Parainfluenza Virus,Respiratory Syncytial Virus (RSV),Measles (Rubeola),Mumps,Herpes Simplex Virus 1/2 (HSV 1/2),Rotavirus,Norovirus,West Nile Virus (WNV),Zika Virus,Rabies Virus,Rubella Virus,Parvovirus B19,Human Herpes Virus-6 (HHV-6),Human Herpes Virus-8 (HHV-8),Varicella-Zoster Virus (VZV),Smallpox Virus,Mpox (Monkeypox),Human Papillomavirus (HPV),HIV (Human Immunodeficiency Virus),HTLV-1 (Human T-Lymphotrophic Virus)
+Gram (-),Gram Staining,Neisseria gonorrhoeae,Neisseria meningitidis,Moraxella catarrhalis,Pseudomonas aeruginosa,Haemophilus influenzae,Bordetella pertussis,Treponema pallidum subsp. pallidum,Borrelia burgdorferi,Campylobacter jejuni,Vibrio cholerae,Yersinia pestis,Yersinia enterocolitica,Escherichia coli (STEC/EHEC O157:H7),Escherichia coli (ETEC),Salmonella Typhi,Shigella spp.,Klebsiella spp.,Proteus spp.,Helicobacter pylori,Francisella tularensis,Brucella spp.,Bartonella henselae,Pasteurella multocida
+Rod/Bacillus,Shape,Listeria monocytogenes,Clostridium tetani,Clostridium botulinum,Clostridium perfringens,Clostridioides difficile,Pseudomonas aeruginosa,Yersinia pestis,Yersinia enterocolitica,Escherichia coli (STEC/EHEC O157:H7),Escherichia coli (ETEC),Salmonella Typhi,Shigella spp.,Klebsiella spp.,Proteus spp.,Francisella tularensis,Brucella spp.,Bartonella henselae,Pasteurella multocida,Corynebacterium diphtheriae,Bacillus anthracis,Bacillus cereus,C. jeikeium
+Enveloped,Viral Membrane,Coronavirus (General),SARS-CoV-2 (COVID-19),Epstein-Barr Virus (EBV),Cytomegalovirus (CMV),Influenza A/B,Parainfluenza Virus,Respiratory Syncytial Virus (RSV),Measles (Rubeola),Mumps,Herpes Simplex Virus 1/2 (HSV 1/2),West Nile Virus (WNV),Zika Virus,Rabies Virus,Rubella Virus,Human Herpes Virus-6 (HHV-6),Human Herpes Virus-8 (HHV-8),Varicella-Zoster Virus (VZV),Smallpox Virus,Mpox (Monkeypox),HIV (Human Immunodeficiency Virus),HTLV-1 (Human T-Lymphotrophic Virus)
+Gram (+),Gram Staining,Group A Streptococcus (S. pyogenes),Group B Streptococcus (S. agalactiae),Staphylococcus aureus,Staphylococcus epidermidis,Staphylococcus saprophyticus,Streptococcus pneumoniae,Corynebacterium diphtheriae,Bacillus anthracis,Bacillus cereus,Listeria monocytogenes,Clostridium tetani,Clostridium botulinum,Clostridium perfringens,Clostridioides difficile,Actinomyces israelii,Streptococcus gallolyticus (bovis),Enterococcus faecalis,Enterococcus faecium,C. jeikeium
+Fecal-Oral transmission,Sub-Grouping,Polio (Picornavirus),Enteroviruses (Picornavirus),Echovirus (Picornavirus),Coxsackie (Picornavirus),Hepatitis A virus (Picornavirus),Escherichia coli,Salmonella,Shigella,Rotavirus,Norovirus,Giardia lamblia,Entamoeba histolytica,Cryptosporidium spp,Ascaris lumbricoides,Taenia solium
+Parasite,Pathogen Type,Giardia lamblia,Entamoeba histolytica,Cryptosporidium spp,Plasmodium falciparum,Babesia microti,Leishmania spp.,Trypanosoma cruzi,Schistosoma spp.,Taenia solium,Ascaris lumbricoides,Enterobius vermicularis,Strongyloides stercoralis,Diphyllobothrium latum
+(+)ssRNA,Viral Type,Picornavirus,Rhinovirus,Polio (Poliovirus),Coxsackie A,Coxsackie B,Coronavirus (General),SARS-CoV-2 (COVID-19),Norovirus,West Nile Virus (WNV),Zika Virus,Rubella Virus
+Non-enveloped/naked,Viral Membrane,Picornavirus,Rhinovirus,Polio (Poliovirus),Coxsackie A,Coxsackie B,Adenovirus,Rotavirus,Norovirus,Parvovirus B19,Human Papillomavirus (HPV)
+Watery diarrhea,Symptom,Vibrio cholerae,Enterotoxigenic E. coli (ETEC),Rotavirus,Norovirus,Clostridium perfringens,Campylobacter jejuni,Clostridioides difficile,Giardia lamblia
+Fungi,Pathogen Type,Pneumocystis jirovecii,Candida albicans,Cryptococcus neoformans,Mucor,Sporothrix schenckii,Histoplasma capsulatum,Coccidioides immitis,Blastomyces dermatitidis
+Cocci,Shape,Group A Streptococcus (S. pyogenes),Group B Streptococcus (S. agalactiae),Staphylococcus aureus,Staphylococcus epidermidis,Staphylococcus saprophyticus,Streptococcus gallolyticus (bovis),Enterococcus faecalis,Enterococcus faecium
+Penicillin,Treatment,Group A Streptococcus (S. pyogenes),Group B Streptococcus (S. agalactiae),Streptococcus pneumoniae,Corynebacterium diphtheriae,Clostridium tetani,Actinomyces israelii (Long duration),Treponema pallidum subsp. pallidum,Pasteurella multocida (Sensitive)
+dsDNA,Viral Type,Adenovirus,Epstein-Barr Virus (EBV),Cytomegalovirus (CMV),Herpes Simplex Virus 1/2 (HSV 1/2),Varicella-Zoster Virus (VZV),Smallpox Virus,Mpox (Monkeypox),Human Papillomavirus (HPV)
+Protozoa,Parasitic Type,Giardia lamblia,Entamoeba histolytica,Cryptosporidium spp,Plasmodium falciparum,Babesia microti,Leishmania spp.,Trypanosoma cruzi
+Lactose Non-fermenter,Property Classification,Proteus,Providentia,Salmonella,Shigella,Yersinia,Pseudomonas aeruginosa,Pasteurella multocida
+Anaerobe,Sub-Grouping,Actinomyces israelii,Clostridium perfringens,Clostridium tetani,Clostridium botulinum,Clostridioides difficile,Fusobacterium necroforum,Bacteroides fragilis
+Nosocomial infection,Clinical Syndrome,Proteus spp.,Enterococcus faecium,Klebsiella,Enterobacter,Citrobacter,Serratia,Pseudomonas aeruginosa
+No gram stain,Gram Staining,Legionella pneumophila,Mycoplasma pneumoniae,Chlamydia trachomatis,Rickettsia rickettsii (RMSF),Rickettsia prowazekii (Epidemic Typhus),Coxiella burnetii (Q Fever)
+Coccobacillus,Shape,Haemophilus influenzae,Bordetella pertussis,Yersinia,Pasteurella,Brucella,Francisella
+Herpesviridae,Viral Family,Epstein-Barr Virus (EBV),Cytomegalovirus (CMV),Herpes Simplex Virus 1/2 (HSV 1/2),Human Herpes Virus-6 (HHV-6),Human Herpes Virus-8 (HHV-8),Varicella-Zoster Virus (VZV)
+(-)ssRNA,Viral Type,Influenza A/B,Parainfluenza Virus (HPIV),Respiratory Syncytial Virus (RSV),Measles (Rubeola),Mumps,Rabies Virus
+Spore former,Property,Bacillus cereus,Bacillus anthracis,Clostridium tetani,Clostridium botulinum,Coxiella burnetii
+Lactose Fermenter,Property Classification,Escherichia Coli,Klebsiella,Enterobacter,Citrobacter,Serratia
+Oxidase Positive,Property Classification,Campylobacter,Helicobacter,Vibrio,Aeromonas,Pseudomonas
+Intracellular,Replication Location,Listeria monocytogenes,Shigella spp.,Brucella spp.,Chlamydia trachomatis,Histoplasma capsulatum
+Obligate intracellular,Replication Location,Rickettsia rickettsii (RMSF),Rickettsia prowazekii (Epidemic Typhus),Coxiella burnetii (Q Fever),Legionella pneumophila,Chlamydia trachomatis
+Meningitis,Symptom,Streptococcus pneumoniae,Neisseria meningitidis,Haemophilus influenzae,Cryptococcus neoformans,Mumps
+Picornaviridae/Picornavirus,Viral Family,Picornavirus,Rhinovirus,Polio (Poliovirus),Coxsackie A,Coxsackie B
+Live-Attenuated vaccine,Vaccine Type,Rubella Virus,Measles (Rubeola),Mumps,Varicella-Zoster Virus (VZV),Yellow fever
+Dimorphic (Mold in cold/Yeast in heat),Fungal Property,Sporothrix schenckii,Histoplasma capsulatum,Coccidioides immitis,Blastomyces dermatitidis
+Diplococci,Shape,Streptococcus pneumoniae,Neisseria gonorrhoeae,Neisseria meningitidis,Moraxella catarrhalis
+UTI,Syndrome,Proteus spp.,Enterococcus faecalis,Enterococcus faecium,Escherichia coli
+Paramyxoviridae/Paramyxovirus,Viral Family,Parainfluenza Virus (HPIV),Respiratory Syncytial Virus (RSV),Measles (Rubeola),Mumps
+Poxviridae/Poxvirus,Viral Family,Smallpox Virus,Mpox (Monkeypox),Vaccinia,Molluscum Contagiosum
+Catalase +,Sub-Grouping,Staphylococcus aureus,Staphylococcus epidermidis,Staphylococcus saprophyticus,Listeria monocytogenes
+Fusion protein (F),Virulence Factor,Parainfluenza Virus,Respiratory Syncytial Virus (RSV),Measles (Rubeola),Mumps
+Bloody diarrhea,Symptom,E. coli (STEC/EHEC),Shigella spp.,Yersinia enterocolitica
+Guillain-Barré,Buzzword,Campylobacter jejuni,Zika Virus,Orthomyxovirus
+Helminth,Shape,Ascaris lumbricoides,Enterobius vermicularis,Strongyloides stercoralis
+Rod (comma-shaped/curved),Shape,Campylobacter jejuni,Vibrio cholerae,Helicobacter pylori
+Spirochete,Shape,Treponema pallidum subsp. pallidum,Borrelia burgdorferi,Leptospira interrogans
+alpha-hemolytic,Sub-Grouping,Streptococcus pneumoniae,Viridans Streptococci,Enterococcus
+beta-hemolytic,Sub-Grouping,Group A Streptococcus (S. pyogenes),Group B Streptococcus (S. agalactiae),Staphylococcus aureus
+Rash involving palms/soles,Symptom,Treponema pallidum subsp. pallidum,Rickettsia rickettsii (RMSF),Coxsackie A
+Conjugated vaccine,Vaccine Type,Streptococcus pneumoniae,Neisseria meningitidis,Haemophilus influenzae
+Actin rockets,Buzzword,Listeria monocytogenes,Shigella spp.
+Bipolar Staining,Buzzword,Yersinia pestis,Francisella tularensis
+Cat Bites,Buzzword,Pasteurella multocida,Bartonella hensalae
+Segmented,Buzzword,Orthomyxovirus,Rotavirus
+Unpasteurized dairy,Buzzword,Listeria monocytogenes,Brucella spp.
+Pulse-temperature deficit,Pathognomonic Symptom,Francisella tularensis,Brucella spp.
+Urease +,Property,Proteus spp.,Helicobacter pylori
+Helminth,Shape,Taenia solium,Diphyllobothrium latum
+Prosthetics,Source of infection,Staphylococcus epidermidis,C. jeikeium
+silver stain,Staining,Legionella pneumophila,Pneumocystis jirovecii
+Coagulase Negative,Sub-Grouping,Staphylococcus epidermidis,Staphylococcus saprophyticus
+Cleaves 28S RNA of 60S ribosome subunit (Halts protein synthesis),Virulence Factor MOA,Escherichia coli (STEC/EHEC O157:H7),Shigella spp.
+Superantigen (Massive Immune Activation),Virulence Factor MOA,Group A Streptococcus (S. pyogenes),Staphylococcus aureus
+Toxoid vaccine,Vaccine Type,Corynebacterium diphtheriae,Clostridium tetani
+Flaviviridae,Viral Family,West Nile Virus (WNV),Zika Virus
+Retroviridae,Viral Family,HIV (Human Immunodeficiency Virus),HTLV-1 (Human T-Lymphotrophic Virus)
+ADP-ribosylates EF-2 (Inhibits protein synthesis),Virulence Factor MOA,Corynebacterium diphtheriae,Pseudomonas aeruginosa
+Biofilm formation,Virulence Factor,Staphylococcus epidermidis,Pseudomonas aeruginosa
+Reverse Transcriptase,Virulence Factor,HIV (Human Immunodeficiency Virus),HTLV-1 (Human T-Lymphotrophic Virus)
+ADP-Ribosylation of Gs-alpha,Virulence Factor MOA,Escherichia coli (ETEC),Vibrio cholerae
+`;
+
+        const bonusCsvData = `Buzzword,Pathogen
+Sandpaper skin,Group A Streptococcus (S. pyogenes)
+Bile soluble,Streptococcus pneumoniae
+Chinese letters appearance on gram stain,Corynebacterium diphtheriae
+Bull neck lymphadenopathy,Corynebacterium diphtheriae
+Poly-d-γ-glutamic acid (PGA) capsule (Protein capsule),Bacillus anthracis
+Chinese rice syndrome,Bacillus cereus
+reheating does not destroy HS toxin,Bacillus cereus
+Blocks release of inhibitory neurotransmitters,Clostridium tetani
+Associated with honey,Clostridium botulinum
+Double zone of hemolysis,Clostridium perfringens
+Gas Gangrene,Clostridium perfringens
+Induced by Clindamycin,Clostridioides difficile
+Associated with medically-induced abortion,Paeniclostridium sordellii
+Sulfur granules,Actinomyces israelii
+"Lumpy jaw",Actinomyces israelii
+Oxidizes glucose but NOT Maltose,Neisseria gonorrhoeae
+Waterhouse-Friderichsen Syndrome,Neisseria meningitidis
+Otitis Externa,Pseudomonas aeruginosa
+Requires Factor X and Factor V,Haemophilus influenzae
+Whooping cough,Bordetella pertussis
+BCYE agar,Legionella pneumophila
+Walking pneumonia,Mycoplasma pneumoniae
+Elementary Body / Reticulate Body,Chlamydia trachomatis
+Painless solitary chancre,Treponema pallidum
+Erythema migrans (bulls eye),Borrelia burgdorferi
+Ixodes tick,Borrelia burgdorferi
+"Associated with undercooked poultry, Guillain-Barré",Campylobacter jejuni
+Rice Water Stools,Vibrio cholerae
+ADP-ribosylation of Gs-alpha / Stimulates cAMP,Vibrio cholerae
+Black Plague,Yersinia pestis
+Currant jelly sputum,Klebsiella spp.
+Staghorn calculi,Proteus spp.
+Potent urease buffers acid,Helicobacter pylori
+Duodenal ulcers,Helicobacter pylori
+Requires cysteine or cystine,Francisella tularensis
+Receptor is ICAM-1,Rhinovirus
+Pleurodynia,Coxsackie B
+Binds to CD21 (C3d receptor),Epstein-Barr Virus (EBV)
+Owl eye inclusion,Cytomegalovirus (CMV)
+Monospot negative mononucleosis,Cytomegalovirus (CMV)
+Only RNA virus replicates in nucleus,Influenza
+Barking cough,Parainfluenza Virus (HPIV)
+Steeple sign (Croup),Parainfluenza Virus (HPIV)
+Bronchiolitis (Young children),Respiratory Syncytial Virus (RSV)
+Only Fusion protein (No HA/NA),Respiratory Syncytial Virus (RSV)
+Koplik spots,Measles (Rubeola)
+Parotitis,Mumps
+Generally unilateral orchitis,Mumps
+Painful erythematous vesicles,Herpes Simplex Virus 1/2 (HSV 1/2)
+Vesicular rash in various stages,Varicella-Zoster Virus (VZV)
+Cruise ships,Norovirus
+DS RNA (11 segments),Rotavirus
+Acute Flaccid Paralysis (mimics polio),West Nile Virus (WNV)
+Culex mosquitos,West Nile Virus (WNV)
+Congenital Microcephaly,Zika Virus
+Nearly 100% fatal after symptoms,Rabies Virus
+Negri body (eosinophilic inclusion),Rabies Virus
+Only Single Stranded DNA virus,Parvovirus B19
+Kaposi’s sarcoma (AIDS),Human Herpes Virus-8 (HHV-8)
+Only DNA virus replicates in cytoplasm,Poxvirus
+Carries own DNA-dependent RNA polymerase,Poxvirus
+Guarnieri inclusion bodies,Smallpox Virus
+Cloverleaf Nuclei,HTLV-1
+Crushed ping-pong balls,Pneumocystis jirovecii
+Non-septated / 90˚ branching,Mucor
+Diabetic Ketoacidosis / Black escar,Mucor
+Rose handlers' disease,Sporothrix schenckii
+Louse borne,Rickettsia prowazekii (Epidemic Typhus)
+B12 deficiency,Diphyllobothrium latum
+Migrates at night to lay pruritic eggs,Enterobius vermicularis
+Diarrhea with abdominal bloating (camping),Giardia lamblia
+Banana-shaped gametocyte,Plasmodium falciparum
+Desmoglein-1,Staphylococcus aureus
+Hepatosplenomegaly and portal hypertension,Schistosoma spp.
+`;
+
+        // DOM Elements
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const endScreen = document.getElementById('end-screen');
+        const reviewScreen = document.getElementById('review-screen');
+        const reviewContent = document.getElementById('review-content');
+        const howToPlayModal = document.getElementById('how-to-play-modal');
+
+        const startClassicBtn = document.getElementById('start-classic-btn');
+        const startBuzzwordBtn = document.getElementById('start-buzzword-btn');
+        const howToPlayBtn = document.getElementById('how-to-play-btn');
+        const closeHowToPlayBtn = document.getElementById('close-how-to-play-btn');
+        const questionTitle = document.getElementById('question-title');
+        const questionCounter = document.getElementById('question-counter');
+        const pathogenDisplayGrid = document.getElementById('pathogen-display-grid');
+        const pathogen1Card = document.getElementById('pathogen1-card').querySelector('h3');
+        const pathogen2Card = document.getElementById('pathogen2-card');
+        const attemptStatus = document.getElementById('attempt-status');
+        const freeResponseContainer = document.getElementById('free-response-container');
+        const mcContainer = document.getElementById('mc-container');
+        const answerInput = document.getElementById('answer-input');
+        const submitAnswerBtn = document.getElementById('submit-answer-btn');
+        const hintBtn = document.getElementById('hint-btn');
+        const scoreDisplay = document.getElementById('score');
+        const feedbackText = document.getElementById('feedback-text');
+        const allAnswersContainer = document.getElementById('all-answers-container');
+        const nextQuestionBtn = document.getElementById('next-question-btn');
+        const proceedToMcBtn = document.getElementById('proceed-to-mc-btn');
+        const adjustScoreBtn = document.getElementById('adjust-score-btn');
+        const adjustScoreOptions = document.getElementById('adjust-score-options');
+        const creditAttempt1Btn = document.getElementById('credit-attempt1-btn');
+        const creditAttempt2Btn = document.getElementById('credit-attempt2-btn');
+        const creditBackBtn = document.getElementById('credit-back-btn');
+        
+        const finalScoreDisplay = document.getElementById('final-score');
+        const highScoreDisplay = document.getElementById('high-score');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const reviewBtn = document.getElementById('review-btn');
+        const playAgainReviewBtn = document.getElementById('play-again-review-btn');
+
+        // Game State
+        let mainPathogenProperties = [];
+        let buzzwordQuestions = [];
+        let allPathogenNames = new Set();
+        let gameMode = 'classic';
+        let score = 0;
+        let currentQuestion = null;
+        let questionsAsked = 0;
+        let currentAttempts = 0;
+        let isFreeAttempt = false;
+        let hintUsed = false;
+        let attempt1Answer = '';
+        let pointsAwardedThisQuestion = 0;
+        let gameHistory = [];
+        let usedAnswers = [];
+        const TOTAL_QUESTIONS = 10;
+        const SIMILARITY_THRESHOLD = 0.85; 
+        const MAX_ANSWER_REPEATS = 1;
+        const forbiddenAnswers = new Set([
+            'Gram (+)', 'Gram (-)', 'Enveloped', 'Non-enveloped/naked',
+            'Bacillus', 'Cocci', 'Coccobacillus', 'Diplococci', 'Helminth', 'Rod',
+            'Rod (comma-shaped/curved)', 'Spirochete'
+        ]);
+
+        // --- UTILITY FUNCTIONS ---
+        function getSimilarity(s1, s2) {
+            const cleanS1 = s1.toLowerCase().trim().replace(/\(.*\)/g, '').trim().replace(/[\s-]+/g, ' ');
+            const cleanS2 = s2.toLowerCase().trim().replace(/\(.*\)/g, '').trim().replace(/[\s-]+/g, ' ');
+
+            if (cleanS1 === cleanS2) return 1.0;
+            if (cleanS1.includes(cleanS2) || cleanS2.includes(cleanS1)) return 1.0;
+            
+            const s1Words = cleanS1.split(' ');
+            const s2Words = cleanS2.split(' ');
+
+            // Abbreviation Check (e.g., HSV vs Herpes Simplex Virus)
+            if (s1Words.length === 1 && s1Words[0].length >= 3 && s1Words[0].length <= 5) { // Potential acronym
+                const s2Acronym = s2Words.map(w => w[0]).join('');
+                if (s1Words[0] === s2Acronym) return 1.0;
+            }
+            if (s2Words.length === 1 && s2Words[0].length >= 3 && s2Words[0].length <= 5) { // Potential acronym
+                const s1Acronym = s1Words.map(w => w[0]).join('');
+                if (s2Words[0] === s1Acronym) return 1.0;
+            }
+
+            // Genus-species Check (e.g., C. difficile vs Clostridium difficile)
+            const checkGenusSpecies = (aWords, bWords) => {
+                if (aWords.length === 2 && bWords.length === 2 && aWords[1] === bWords[1]) {
+                    if (aWords[0].length === 2 && aWords[0].endsWith('.') && bWords[0].startsWith(aWords[0].charAt(0))) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+            if (checkGenusSpecies(s1Words, s2Words) || checkGenusSpecies(s2Words, s1Words)) return 1.0;
+
+            let longer = cleanS1.length > cleanS2.length ? cleanS1 : cleanS2;
+            let shorter = cleanS1.length > cleanS2.length ? cleanS2 : cleanS1;
+            if (longer.length === 0) return 1.0;
+            
+            const costs = new Array(shorter.length + 1);
+            for (let i = 0; i <= shorter.length; i++) {
+                let lastValue = i;
+                for (let j = 0; j <= longer.length; j++) {
+                    if (i === 0) costs[j] = j;
+                    else if (j > 0) {
+                        let newValue = costs[j - 1];
+                        if (shorter.charAt(i - 1) !== longer.charAt(j - 1)) {
+                            newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                        }
+                        costs[j - 1] = lastValue;
+                        lastValue = newValue;
+                    }
+                }
+                if (i > 0) costs[longer.length] = lastValue;
+            }
+            const distance = costs[longer.length];
+            return (longer.length - distance) / longer.length;
+        }
+
+
+        // --- DATA PARSING ---
+        function parseMainCSV(csvText, masterPathogenList) {
+            const lines = csvText.trim().split('\n').slice(1);
+            return lines.map(line => {
+                const values = line.split(',');
+                const property = (values[0] || '').trim();
+                const classification = (values[1] || '').trim();
+                const pathogens = values.slice(2).map(p => p.trim()).filter(p => p !== '' && masterPathogenList.has(p));
+                return { property, classification, pathogens };
+            }).filter(row => row.property && row.classification && row.pathogens.length >= 2);
+        }
+
+        function parseBonusCSV(csvText) {
+            const lines = csvText.trim().split('\n').slice(1);
+            return lines.map(line => {
+                const values = line.split(/,(.+)/);
+                const buzzword = (values[0] || '').trim();
+                const pathogen = (values[1] || '').trim();
+                return { buzzword, pathogen };
+            }).filter(q => q.buzzword && q.pathogen);
+        }
+
+        function buildMasterPathogenList(mainCsv, bonusCsv) {
+            const masterList = new Set();
+            const mainLines = mainCsv.trim().split('\n').slice(1);
+            mainLines.forEach(line => {
+                const values = line.split(',');
+                const classification = (values[1] || '').trim();
+                if (classification === 'Pathogen Type') {
+                    values.slice(2).map(p => p.trim()).filter(p => p).forEach(p => masterList.add(p));
+                }
+            });
+
+            const bonusLines = bonusCsv.trim().split('\n').slice(1);
+            bonusLines.forEach(line => {
+                const values = line.split(/,(.+)/);
+                const pathogen = (values[1] || '').trim();
+                if (pathogen) masterList.add(pathogen);
+            });
+            return masterList;
+        }
+
+        // --- QUESTION GENERATION ---
+        function generateCommonPropertyQuestion() {
+            let attempts = 0;
+            while (attempts < 500) {
+                attempts++;
+                const pathogenList = Array.from(allPathogenNames);
+                const pathogen1 = pathogenList[Math.floor(Math.random() * pathogenList.length)];
+                let pathogen2 = pathogenList[Math.floor(Math.random() * pathogenList.length)];
+                while (pathogen1 === pathogen2) {
+                    pathogen2 = pathogenList[Math.floor(Math.random() * pathogenList.length)];
+                }
+
+                const allSharedProperties = mainPathogenProperties.filter(prop =>
+                    prop.classification !== 'Pathogen Type' &&
+                    prop.pathogens.includes(pathogen1) &&
+                    prop.pathogens.includes(pathogen2)
+                );
+
+                const validSharedProperties = allSharedProperties.filter(prop => !forbiddenAnswers.has(prop.property));
+
+                if (validSharedProperties.length === 0) continue;
+
+                validSharedProperties.sort((a, b) => a.pathogens.length - b.pathogens.length);
+
+                const choicePoolSize = Math.min(2, validSharedProperties.length);
+                const choiceIndex = Math.floor(Math.random() * choicePoolSize);
+                let intendedAnswer = validSharedProperties[choiceIndex];
+
+                const answerRepeatCount = usedAnswers.filter(ans => ans === intendedAnswer.property).length;
+                if (answerRepeatCount >= MAX_ANSWER_REPEATS) {
+                    if (choicePoolSize > 1) {
+                        const otherIndex = 1 - choiceIndex;
+                        const alternativeAnswer = validSharedProperties[otherIndex];
+                        if (usedAnswers.filter(ans => ans === alternativeAnswer.property).length < MAX_ANSWER_REPEATS) {
+                            intendedAnswer = alternativeAnswer;
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        continue;
+                    }
+                }
+
+                return {
+                    type: 'common',
+                    pathogen1Name: pathogen1,
+                    pathogen2Name: pathogen2,
+                    intendedAnswer: intendedAnswer,
+                    allSharedProperties: allSharedProperties
+                };
+            }
+            console.error("Failed to generate a valid common property question.");
+            return null;
+        }
+
+        function generateBuzzwordQuestion() {
+            if (buzzwordQuestions.length === 0) return null;
+            const bonusRow = buzzwordQuestions[Math.floor(Math.random() * buzzwordQuestions.length)];
+            return {
+                type: 'buzzword',
+                buzzword: bonusRow.buzzword,
+                correctAnswer: bonusRow.pathogen
+            };
+        }
+
+        function getNextQuestion() {
+            let question;
+            const isBonusTime = questionsAsked >= TOTAL_QUESTIONS;
+
+            if (isBonusTime) {
+                question = (gameMode === 'classic') ? generateBuzzwordQuestion() : generateCommonPropertyQuestion();
+                if(question) question.isBonus = true;
+            } else {
+                question = (gameMode === 'classic') ? generateCommonPropertyQuestion() : generateBuzzwordQuestion();
+                if(question) question.isBonus = false;
+            }
+            return question;
+        }
+
+        // --- UI & GAME FLOW ---
+        function updateAttemptStatus() {
+            let statusText = '';
+            const redoText = isFreeAttempt ? ' - Redo' : '';
+            const questionType = currentQuestion.type;
+
+            if (currentQuestion.isBonus) {
+                 statusText = 'Bonus Question';
+            } else if (questionsAsked < TOTAL_QUESTIONS) {
+                statusText = `Question ${questionsAsked + 1} of ${TOTAL_QUESTIONS}`;
+            }
+
+            if (questionType === 'common') {
+                if (currentAttempts === 0) {
+                    const points = hintUsed ? 75 : 100;
+                    statusText += ` | Attempt 1${redoText} (+${points} points)`;
+                } else {
+                    statusText += ` | Attempt 2 (+50 points)`;
+                }
+            } else { // buzzword
+                if (currentAttempts === 0) {
+                     statusText += ` | Attempt 1 (+100 points)`;
+                } else {
+                     statusText += ` | Attempt 2 (+50 points)`;
+                }
+            }
+            attemptStatus.textContent = statusText;
+        }
+
+
+        function displayQuestion(question) {
+            currentQuestion = question;
+            if (!currentQuestion) {
+                feedbackText.textContent = "Couldn't generate a new question. Please restart.";
+                setTimeout(resetToStartScreen, 3000);
+                return;
+            };
+            currentAttempts = 0;
+            isFreeAttempt = false;
+            hintUsed = false;
+            attempt1Answer = '';
+            pointsAwardedThisQuestion = 0;
+            
+            feedbackText.textContent = '';
+            allAnswersContainer.innerHTML = '';
+            answerInput.value = '';
+            
+            mcContainer.classList.add('hidden');
+            mcContainer.innerHTML = '';
+            freeResponseContainer.classList.remove('hidden');
+
+            answerInput.disabled = false;
+            submitAnswerBtn.disabled = false;
+            
+            nextQuestionBtn.classList.add('hidden');
+            proceedToMcBtn.classList.add('hidden');
+            proceedToMcBtn.textContent = 'Try Attempt 2 (+50)';
+            adjustScoreBtn.classList.add('hidden');
+            adjustScoreOptions.classList.add('hidden');
+            
+            if (currentQuestion.isBonus) {
+                questionCounter.textContent = 'Bonus Question!';
+            } else {
+                questionCounter.textContent = `Question ${questionsAsked + 1} of ${TOTAL_QUESTIONS}`;
+            }
+
+            if (currentQuestion.type === 'common') {
+                questionTitle.textContent = currentQuestion.isBonus ? 'Bonus: Find the Common Property' : 'Find the Common Property';
+                pathogen1Card.textContent = currentQuestion.pathogen1Name;
+                pathogenDisplayGrid.classList.remove('md:grid-cols-1');
+                pathogenDisplayGrid.classList.add('md:grid-cols-2', 'items-stretch');
+                pathogen1Card.parentElement.classList.remove('md:col-span-2', 'mx-auto', 'max-w-md');
+                pathogen2Card.classList.remove('hidden');
+                pathogen2Card.querySelector('h3').textContent = currentQuestion.pathogen2Name;
+                hintBtn.textContent = 'Hint (+75)';
+                hintBtn.disabled = false;
+                hintBtn.classList.remove('hidden');
+            } else { // Buzzword
+                questionTitle.textContent = currentQuestion.isBonus ? 'Bonus: Name the Pathogen' : 'Name the Pathogen';
+                pathogen1Card.textContent = currentQuestion.buzzword;
+                pathogenDisplayGrid.classList.add('md:grid-cols-1');
+                pathogenDisplayGrid.classList.remove('md:grid-cols-2', 'items-stretch');
+                pathogen1Card.parentElement.classList.add('md:col-span-2', 'mx-auto', 'max-w-md');
+                pathogen2Card.classList.add('hidden');
+                hintBtn.classList.add('hidden');
+            }
+            updateAttemptStatus();
+        }
+        
+        function handleHint() {
+            if (hintUsed || currentQuestion.type !== 'common') return;
+            hintUsed = true;
+            hintBtn.disabled = true;
+            if(!currentQuestion.hint) {
+                 currentQuestion.hint = `Hint: think about '${currentQuestion.intendedAnswer.classification}'`;
+            }
+            feedbackText.textContent = currentQuestion.hint;
+            feedbackText.className = 'text-lg font-semibold feedback-neutral';
+            updateAttemptStatus();
+        }
+
+        function setupAttempt2_MultipleChoice() {
+            currentAttempts = 1;
+            isFreeAttempt = false;
+            freeResponseContainer.classList.add('hidden');
+            mcContainer.classList.remove('hidden');
+            hintBtn.classList.add('hidden');
+            feedbackText.textContent = ''; 
+
+            const correctAnswer = currentQuestion.intendedAnswer.property;
+            const distractors = new Set();
+            const forbiddenDistractors = new Set([
+                 correctAnswer.toLowerCase(),
+                 attempt1Answer.toLowerCase()
+            ]);
+            
+            while (distractors.size < 4) {
+                const randomRow = mainPathogenProperties[Math.floor(Math.random() * mainPathogenProperties.length)];
+                const randomProp = randomRow.property;
+                if (randomProp && !forbiddenDistractors.has(randomProp.toLowerCase())) {
+                    distractors.add(randomProp);
+                }
+            }
+
+            const options = [correctAnswer, ...Array.from(distractors)].sort(() => Math.random() - 0.5);
+            mcContainer.innerHTML = '';
+            options.forEach(opt => {
+                const button = document.createElement('button');
+                button.textContent = opt;
+                button.className = 'mc-option p-3 rounded-lg text-left';
+                button.onclick = () => {
+                    document.querySelectorAll('.mc-option').forEach(btn => btn.classList.remove('selected'));
+                    button.classList.add('selected');
+                };
+                mcContainer.appendChild(button);
+            });
+            updateAttemptStatus();
+        }
+
+        function setupBuzzwordAttempt2_MC() {
+            currentAttempts = 1;
+            isFreeAttempt = false;
+            freeResponseContainer.classList.add('hidden');
+            mcContainer.classList.remove('hidden');
+            feedbackText.textContent = ''; 
+
+            const correctAnswer = currentQuestion.correctAnswer;
+            const distractors = new Set();
+            const pathogenList = Array.from(allPathogenNames);
+            
+            while (distractors.size < 4) {
+                const randomPathogen = pathogenList[Math.floor(Math.random() * pathogenList.length)];
+                if (randomPathogen !== correctAnswer && getSimilarity(randomPathogen, attempt1Answer) < 1.0) {
+                    distractors.add(randomPathogen);
+                }
+            }
+
+            const options = [correctAnswer, ...Array.from(distractors)].sort(() => Math.random() - 0.5);
+            mcContainer.innerHTML = '';
+            options.forEach(opt => {
+                const button = document.createElement('button');
+                button.textContent = opt;
+                button.className = 'mc-option p-3 rounded-lg text-left';
+                button.onclick = () => {
+                    document.querySelectorAll('.mc-option').forEach(btn => btn.classList.remove('selected'));
+                    button.classList.add('selected');
+                };
+                mcContainer.appendChild(button);
+            });
+            updateAttemptStatus();
+        }
+
+        function handleSubmit() {
+            const wasFreeAttempt = isFreeAttempt;
+            isFreeAttempt = false;
+
+            if (currentQuestion.type === 'buzzword') {
+                 if (currentAttempts === 0) { // First, free-response attempt for buzzword
+                    const userAnswer = answerInput.value.trim();
+                    if (!userAnswer) return;
+                    attempt1Answer = userAnswer;
+                    
+                    if (getSimilarity(userAnswer, currentQuestion.correctAnswer) > SIMILARITY_THRESHOLD) {
+                        pointsAwardedThisQuestion = 100;
+                        score += pointsAwardedThisQuestion;
+                        scoreDisplay.textContent = score;
+                        feedbackText.textContent = `Correct! +${pointsAwardedThisQuestion} points`;
+                        feedbackText.className = 'text-xl font-semibold feedback-correct';
+                        revealAnswer();
+                    } else {
+                        answerInput.disabled = true;
+                        submitAnswerBtn.disabled = true;
+                        feedbackText.textContent = 'Incorrect.';
+                        feedbackText.className = 'text-xl font-semibold feedback-incorrect';
+                        proceedToMcBtn.classList.remove('hidden');
+                    }
+                 } else { // Second, MC attempt for buzzword
+                    const selected = mcContainer.querySelector('.selected');
+                    if (!selected) return;
+                    const userAnswer = selected.textContent;
+                    
+                    if (userAnswer === currentQuestion.correctAnswer) {
+                        pointsAwardedThisQuestion = 50;
+                        score += pointsAwardedThisQuestion;
+                        scoreDisplay.textContent = score;
+                        feedbackText.textContent = `Correct! +50 points`;
+                        feedbackText.className = 'text-xl font-semibold feedback-correct';
+                    } else {
+                        pointsAwardedThisQuestion = 0;
+                        feedbackText.textContent = `Incorrect.`;
+                        feedbackText.className = 'text-xl font-semibold feedback-incorrect';
+                    }
+                    revealAnswer();
+                }
+                updateAttemptStatus();
+                return;
+            }
+
+            // Handle 'common' type questions
+            if (currentAttempts === 0) { // Free Response Attempt
+                const userAnswer = answerInput.value.trim();
+                if (!userAnswer) return;
+                attempt1Answer = userAnswer;
+                
+                const isIntendedAnswer = getSimilarity(userAnswer, currentQuestion.intendedAnswer.property) > SIMILARITY_THRESHOLD;
+
+                if (isIntendedAnswer) {
+                    if (!wasFreeAttempt) currentAttempts++;
+                    pointsAwardedThisQuestion = hintUsed ? 75 : 100;
+                    score += pointsAwardedThisQuestion;
+                    scoreDisplay.textContent = score;
+                    feedbackText.textContent = `Correct! That's what I was thinking of. +${pointsAwardedThisQuestion} points`;
+                    feedbackText.className = 'text-xl font-semibold feedback-correct';
+                    usedAnswers.push(currentQuestion.intendedAnswer.property);
+                    revealAnswer();
+                } else {
+                    const otherCorrectMatch = currentQuestion.allSharedProperties.find(prop =>
+                        getSimilarity(userAnswer, prop.property) > SIMILARITY_THRESHOLD
+                    );
+
+                    if (otherCorrectMatch) {
+                        isFreeAttempt = true;
+                        feedbackText.textContent = `"${otherCorrectMatch.property}" is also correct, but not what I was thinking of. Try again! (Free attempt)`;
+                        feedbackText.className = 'text-xl font-semibold feedback-neutral';
+                        answerInput.value = '';
+                    } else {
+                        answerInput.disabled = true;
+                        submitAnswerBtn.disabled = true;
+                        hintBtn.disabled = true;
+                        feedbackText.textContent = 'Incorrect.';
+                        feedbackText.className = 'text-xl font-semibold feedback-incorrect';
+                        proceedToMcBtn.classList.remove('hidden');
+                    }
+                }
+            } else { // Multiple Choice Attempt
+                const selected = mcContainer.querySelector('.selected');
+                if (!selected) return;
+                const userAnswer = selected.textContent;
+                
+                if (userAnswer === currentQuestion.intendedAnswer.property) {
+                    pointsAwardedThisQuestion = 50;
+                    score += pointsAwardedThisQuestion;
+                    scoreDisplay.textContent = score;
+                    feedbackText.textContent = `Correct! +50 points`;
+                    feedbackText.className = 'text-xl font-semibold feedback-correct';
+                    usedAnswers.push(userAnswer);
+                } else {
+                    pointsAwardedThisQuestion = 0;
+                    feedbackText.textContent = `Incorrect.`;
+                    feedbackText.className = 'text-xl font-semibold feedback-incorrect';
+                }
+                revealAnswer();
+            }
+            if(!isFreeAttempt) updateAttemptStatus();
+        }
+
+        function revealAnswer() {
+            answerInput.disabled = true;
+            submitAnswerBtn.disabled = true;
+            hintBtn.disabled = true;
+            proceedToMcBtn.classList.add('hidden');
+            document.querySelectorAll('.mc-option').forEach(btn => btn.disabled = true);
+            
+            allAnswersContainer.innerHTML = '';
+            const answerToShow = currentQuestion.type === 'common' ? currentQuestion.intendedAnswer.property : currentQuestion.correctAnswer;
+
+            if (currentQuestion.type === 'common') {
+                const existingFeedback = feedbackText.innerHTML;
+                feedbackText.innerHTML = `${existingFeedback}<br>I was thinking of: <strong>${answerToShow}</strong>`;
+
+                let html = '<h4 class="font-semibold mt-3 text-gray-300">All Shared Properties:</h4><ul class="list-none text-center max-w-md mx-auto">';
+                currentQuestion.allSharedProperties.forEach(prop => {
+                    const isIntended = prop.property === answerToShow;
+                    html += `<li class="p-1 ${isIntended ? 'text-green-400 font-bold' : 'text-gray-400'}">${prop.property}</li>`;
+                });
+                html += '</ul>';
+                allAnswersContainer.innerHTML = html;
+            } else {
+                feedbackText.innerHTML += `<br>The answer was:<br><strong>${answerToShow}</strong>`;
+            }
+
+            nextQuestionBtn.classList.remove('hidden');
+            adjustScoreBtn.classList.remove('hidden');
+            gameHistory.push({ ...currentQuestion, pointsAwarded: pointsAwardedThisQuestion });
+        }
+        
+        function next() {
+            if (currentQuestion.isBonus) {
+                endGame();
+                return;
+            }
+            questionsAsked++;
+            displayQuestion(getNextQuestion());
+        }
+
+        function showReview() {
+            endScreen.classList.add('hidden');
+            reviewScreen.classList.remove('hidden');
+            reviewContent.innerHTML = '';
+
+            gameHistory.forEach((item, index) => {
+                const questionNumber = item.isBonus ? "Bonus" : index + 1;
+                const title = item.type === 'buzzword' 
+                    ? `${item.buzzword}` 
+                    : `${item.pathogen1Name} & ${item.pathogen2Name}`;
+                const answer = item.type === 'buzzword' ? item.correctAnswer : item.intendedAnswer.property;
+
+                const card = document.createElement('div');
+                card.className = 'card p-4 rounded-lg';
+                card.innerHTML = `
+                    <p class="font-bold text-lg">${questionNumber}. ${title}</p>
+                    <p class="text-gray-300 mt-2">Correct Answer:</p>
+                    <ul class="list-disc list-inside text-green-400"><li><strong>${answer}</strong></li></ul>`;
+                reviewContent.appendChild(card);
+            });
+        }
+        
+        function initializeGame() {
+            allPathogenNames = buildMasterPathogenList(mainCsvData, bonusCsvData);
+            mainPathogenProperties = parseMainCSV(mainCsvData, allPathogenNames);
+            buzzwordQuestions = parseBonusCSV(bonusCsvData);
+
+            if (mainPathogenProperties.length < 1 || buzzwordQuestions.length < 1) {
+                 startScreen.innerHTML = `<h1 class="text-2xl text-red-500">Error loading data. Please check CSV files.</h1>`;
+                 startScreen.classList.remove('hidden');
+            } else {
+                startScreen.classList.remove('hidden');
+                gameScreen.classList.add('hidden');
+                endScreen.classList.add('hidden');
+                reviewScreen.classList.add('hidden');
+            }
+        }
+
+        function startGame() {
+            score = 0;
+            questionsAsked = 0;
+            gameHistory = [];
+            usedAnswers = [];
+            scoreDisplay.textContent = score;
+            
+            startScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            reviewScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            
+            displayQuestion(getNextQuestion());
+        }
+        
+        function endGame() {
+            gameScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+            finalScoreDisplay.textContent = score;
+
+            const highScoreKey = gameMode === 'classic' ? 'classicHighScore' : 'buzzwordHighScore';
+            const highScore = localStorage.getItem(highScoreKey) || 0;
+            if (score > highScore) {
+                localStorage.setItem(highScoreKey, score);
+                highScoreDisplay.textContent = score;
+            } else {
+                highScoreDisplay.textContent = highScore;
+            }
+        }
+
+        function resetToStartScreen() {
+            gameScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            reviewScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        }
+
+        // --- EVENT LISTENERS ---
+        window.addEventListener('load', initializeGame);
+        startClassicBtn.addEventListener('click', () => {
+            gameMode = 'classic';
+            startGame();
+        });
+        startBuzzwordBtn.addEventListener('click', () => {
+            gameMode = 'buzzword';
+            startGame();
+        });
+        
+        submitAnswerBtn.addEventListener('click', handleSubmit);
+        hintBtn.addEventListener('click', handleHint);
+        proceedToMcBtn.addEventListener('click', () => {
+            proceedToMcBtn.classList.add('hidden');
+            submitAnswerBtn.disabled = false;
+            if (currentQuestion.type === 'common') {
+                setupAttempt2_MultipleChoice();
+            } else {
+                setupBuzzwordAttempt2_MC();
+            }
+        });
+        answerInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') handleSubmit();
+        });
+        nextQuestionBtn.addEventListener('click', next);
+        
+        adjustScoreBtn.addEventListener('click', () => {
+            adjustScoreBtn.classList.add('hidden');
+            nextQuestionBtn.classList.add('hidden');
+            adjustScoreOptions.classList.remove('hidden');
+            creditAttempt2Btn.classList.remove('hidden');
+        });
+
+        creditBackBtn.addEventListener('click', () => {
+            adjustScoreOptions.classList.add('hidden');
+            adjustScoreBtn.classList.remove('hidden');
+            nextQuestionBtn.classList.remove('hidden');
+        });
+        
+        howToPlayBtn.addEventListener('click', () => {
+            howToPlayModal.classList.remove('hidden');
+        });
+
+        closeHowToPlayBtn.addEventListener('click', () => {
+            howToPlayModal.classList.add('hidden');
+        });
+
+        howToPlayModal.addEventListener('click', (e) => {
+            if (e.target === howToPlayModal) { // Click on the dark overlay
+                howToPlayModal.classList.add('hidden');
+            }
+        });
+
+        const handleScoreAdjustment = (newPoints) => {
+            if (gameHistory.length === 0) return;
+            const lastQuestionRecord = gameHistory[gameHistory.length - 1];
+            const pointsAlreadyAwarded = lastQuestionRecord.pointsAwarded;
+            
+            score = score - pointsAlreadyAwarded + newPoints;
+            lastQuestionRecord.pointsAwarded = newPoints;
+            
+            scoreDisplay.textContent = score;
+
+            adjustScoreOptions.classList.add('hidden');
+            adjustScoreBtn.classList.add('hidden'); 
+            nextQuestionBtn.classList.remove('hidden');
+        };
+
+        creditAttempt1Btn.addEventListener('click', () => handleScoreAdjustment(100));
+        creditAttempt2Btn.addEventListener('click', () => handleScoreAdjustment(50));
+
+        const restart = resetToStartScreen;
+        playAgainBtn.addEventListener('click', restart);
+        playAgainReviewBtn.addEventListener('click', restart);
+        reviewBtn.addEventListener('click', showReview);
+
+    </script>
+</body>
+</html>
