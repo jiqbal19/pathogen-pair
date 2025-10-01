@@ -794,19 +794,29 @@ Hepatosplenomegaly and portal hypertension,Schistosoma spp.
             freeResponseContainer.classList.add('hidden');
             mcContainer.classList.remove('hidden');
             hintBtn.classList.add('hidden');
-            feedbackText.textContent = ''; 
+            feedbackText.textContent = '';
 
             const correctAnswer = currentQuestion.intendedAnswer.property;
             const distractors = new Set();
-            const forbiddenDistractors = new Set([
-                 correctAnswer.toLowerCase(),
-                 attempt1Answer.toLowerCase()
-            ]);
             
-            while (distractors.size < 4) {
+            // Create a set of all possible correct answers for the current pathogen pair to use as a blocklist.
+            const allCorrectAnswersForPair = new Set(
+                currentQuestion.allSharedProperties.map(p => p.property)
+            );
+
+            // Also forbid the user's first incorrect answer from appearing again.
+            if (attempt1Answer) {
+                 allCorrectAnswersForPair.add(attempt1Answer);
+            }
+
+            let attempts = 0;
+            while (distractors.size < 4 && attempts < 1000) {
+                attempts++;
                 const randomRow = mainPathogenProperties[Math.floor(Math.random() * mainPathogenProperties.length)];
                 const randomProp = randomRow.property;
-                if (randomProp && !forbiddenDistractors.has(randomProp.toLowerCase())) {
+                
+                // Ensure the potential distractor is not null and is not one of the correct answers.
+                if (randomProp && !allCorrectAnswersForPair.has(randomProp)) {
                     distractors.add(randomProp);
                 }
             }
